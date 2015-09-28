@@ -4,16 +4,59 @@ import android.annotation.SuppressLint;
 import android.content.ContentUris;
 import android.content.Context;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
 /**
  * Created by Oathkeeper on 2015/9/26.
  */
-public class GetPathUtils {
+public class FileUtils {
+
+    public static void saveImage(Bitmap bmp,String path) {
+        File appDir = new File(path, "test");
+        if (!appDir.exists()) {
+            appDir.mkdir();
+        }
+        String fileName = System.currentTimeMillis() + ".jpg";
+        File file = new File(appDir, fileName);
+        try {
+            FileOutputStream fos = new FileOutputStream(file);
+            bmp.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+            fos.flush();
+            fos.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 获取缓存路径
+     * @param context
+     * @return
+     */
+
+    public static String getDiskCacheDir(Context context) {
+        String cachePath = null;
+        if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())
+                || !Environment.isExternalStorageRemovable()) {
+            cachePath = context.getExternalCacheDir().getPath();
+        } else {
+            cachePath = context.getCacheDir().getPath();
+        }
+        return cachePath;
+    }
+
 
     /*
     *适用于4.4之前的转换Uri的方法
@@ -162,5 +205,8 @@ public class GetPathUtils {
             return "com.android.providers.media.documents".equals(uri.getAuthority());
         }
     }
+
+
+
 
 
