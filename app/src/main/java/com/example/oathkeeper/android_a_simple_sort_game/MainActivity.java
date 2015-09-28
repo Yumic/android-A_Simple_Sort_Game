@@ -1,9 +1,10 @@
 package com.example.oathkeeper.android_a_simple_sort_game;
 
-import android.content.ContentResolver;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
@@ -14,35 +15,63 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.GridLayout;
 import android.widget.ImageView;
+
+import com.soundcloud.android.crop.Crop;
+
+import java.io.File;
+import java.util.List;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
 
 public class MainActivity extends AppCompatActivity {
-
     @Bind(R.id.button_open_album)
     Button buttonOpenAlbum;
     @Bind(R.id.imageView_picture)
     ImageView imageViewPicture;
+    @Bind(R.id.game_1)
+    ImageView game1;
+    @Bind(R.id.game_2)
+    ImageView game2;
+    @Bind(R.id.game_3)
+    ImageView game3;
+    @Bind(R.id.game_4)
+    ImageView game4;
+    @Bind(R.id.game_5)
+    ImageView game5;
+    @Bind(R.id.game_6)
+    ImageView game6;
+    @Bind(R.id.game_7)
+    ImageView game7;
+    @Bind(R.id.game_8)
+    ImageView game8;
+    @Bind(R.id.game_9)
+    ImageView game9;
+    @Bind(R.id.gridLayout_game)
+    GridLayout gridLayoutGame;
     //定义手势检测器实例
     private GestureDetector detector;
     private DisplayMetrics displayMetrics;
     private int mScreenWidth;
-
+    private Uri outputUri;
+    private Context context;
+    private int[] randomList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+        context = this;
         //获取屏幕宽高
         displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         mScreenWidth = displayMetrics.widthPixels;// 获取屏幕分辨率宽
-        //Crop.of();
-        Log.d("test", "屏幕宽度为：" + mScreenWidth);
-        detector = new GestureDetector(this,new MyGestureListener(this));
+
+        randomList= RandomNum.getSequence(9);
+       detector = new GestureDetector(this, new MyGestureListener(this));
         buttonOpenAlbum.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -58,12 +87,8 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-
-        Log.d("test","Action:"+event.getAction());
-
+        Log.d("test", "Action:" + event.getAction());
         return detector.onTouchEvent(event);
-
-
 
 
     }
@@ -91,34 +116,45 @@ public class MainActivity extends AppCompatActivity {
     }
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (resultCode == RESULT_OK) {
+        //选择图片时
+        if (requestCode != Crop.REQUEST_CROP && resultCode == RESULT_OK) {
             Uri uri = data.getData();
-            Log.d("uri", uri.toString());
-            ContentResolver contentResolver = this.getContentResolver();
-            String path;
-            if(android.os.Build.VERSION.SDK_INT>=android.os.Build.VERSION_CODES.KITKAT){
-                path= FileUtils.getPathAfterKitkat(this, uri);
-            }else{
-                path=  FileUtils.getPathBeforeKitkat(this, uri);
-            }
-            //从URI获取图片
-            //Bitmap bitmap = BitmapFactory.decodeStream(contentResolver.openInputStream(uri));
-            Bitmap bitmap = BitmapUtils.compressImageFromFile(path,mScreenWidth);
-            //显示图
-            ImageView imageView = (ImageView) findViewById(R.id.imageView_picture);
-            //将Bitmap设定到ImageView
-            imageView.setImageBitmap(bitmap);
-            //由于4.4以上和以下获取的uri不同，因此区别对待
+            String fileName = System.currentTimeMillis() + ".jpg";
+            outputUri = Uri.fromFile(new File(FileUtils.getDiskCacheDir(context), fileName));
+            Crop.of(uri, outputUri).asSquare().start(this);
 
         }
+        //获得Crop裁剪出的图片
+        if (requestCode == Crop.REQUEST_CROP && resultCode == RESULT_OK) {
+            //将Crop的outputUri转换为真实路径
+            String path;
+            //由于Uri的转换在4.4前后不同，因此区别对待
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                path = FileUtils.getPathAfterKitkat(this, outputUri);
+            } else {
+                path = FileUtils.getPathBeforeKitkat(this, outputUri);
+            }
+            //将保存在路径中的图片显示出来
+            Bitmap bitmap = BitmapUtils.compressImageFromFile(path, mScreenWidth);
+
+            //初始化九块图片
+            List<ImagePiece> pieces = BitmapUtils.split(bitmap, 3, 3);
+            for (int i = 0; i < 9; i++) {
+
+                ImageView[] imageViews={game1,game2,game3,game4,game5,game6,
+                        game7,game8,game9};
+
+                if(imageViews[i]!=null )
+                {
+                    imageViews[i].setImageBitmap(pieces.get(i).bitmap);
+                    Log.d("test","now:___________________________"+i);
+                }
+            }
+
+        }
+
         super.onActivityResult(requestCode, resultCode, data);
     }
-
-
-
-
-
-
 
 
 }
