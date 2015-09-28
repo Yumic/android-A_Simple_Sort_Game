@@ -139,14 +139,14 @@ public class MainActivity extends AppCompatActivity {
 
             //初始化九块图片
             List<ImagePiece> pieces = BitmapUtils.split(bitmap, 3, 3);
-            for (int i = 0; i < 9; i++) {
+            for (int i = 1; i < 9; i++) {
 
                 ImageView[] imageViews={game1,game2,game3,game4,game5,game6,
                         game7,game8,game9};
 
                 if(imageViews[i]!=null )
                 {
-                    imageViews[i].setImageBitmap(pieces.get(i).bitmap);
+                    imageViews[i].setImageBitmap(pieces.get(randomList[i]).bitmap);
                     Log.d("test","now:___________________________"+i);
                 }
             }
