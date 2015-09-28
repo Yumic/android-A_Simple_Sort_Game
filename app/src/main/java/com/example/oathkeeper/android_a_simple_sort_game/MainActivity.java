@@ -2,16 +2,16 @@ package com.example.oathkeeper.android_a_simple_sort_game;
 
 import android.content.ContentResolver;
 import android.content.Intent;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -27,12 +27,17 @@ public class MainActivity extends AppCompatActivity {
     Button buttonOpenAlbum;
     @Bind(R.id.imageView_picture)
     ImageView imageViewPicture;
+    //定义手势检测器实例
+    GestureDetector detector;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+        detector = new GestureDetector(this,new MyGestureListener(this));
         buttonOpenAlbum.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -43,6 +48,18 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+
+        Log.d("test","Action:"+event.getAction());
+
+        return detector.onTouchEvent(event);
+
+
+
 
     }
 
