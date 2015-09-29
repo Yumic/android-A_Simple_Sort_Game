@@ -14,9 +14,12 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.TranslateAnimation;
 import android.widget.Button;
 import android.widget.GridLayout;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.soundcloud.android.crop.Crop;
 
@@ -51,6 +54,13 @@ public class MainActivity extends AppCompatActivity {
     ImageView game9;
     @Bind(R.id.gridLayout_game)
     GridLayout gridLayoutGame;
+    ImageView[] imageViews;
+    private Animation translateAnimation1 = null;
+    private Animation translateAnimation2 = null;
+    int flag =0;//指向空格
+
+    List<ImagePiece> pieces;
+
     //定义手势检测器实例
     private GestureDetector detector;
     private DisplayMetrics displayMetrics;
@@ -69,12 +79,14 @@ public class MainActivity extends AppCompatActivity {
         displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         mScreenWidth = displayMetrics.widthPixels;// 获取屏幕分辨率宽
+        detector = new GestureDetector(this, new MyGestureListener(this));
 
         randomList= RandomNum.getSequence(9);
-       detector = new GestureDetector(this, new MyGestureListener(this));
+
         buttonOpenAlbum.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if(pieces!=null) pieces.clear();
                 Intent intent = new Intent(Intent.ACTION_GET_CONTENT);//ACTION_OPEN_DOCUMENT
                 intent.addCategory(Intent.CATEGORY_OPENABLE);
                 intent.setType("image/*");
@@ -138,12 +150,12 @@ public class MainActivity extends AppCompatActivity {
             Bitmap bitmap = BitmapUtils.compressImageFromFile(path, mScreenWidth);
 
             //初始化九块图片
-            List<ImagePiece> pieces = BitmapUtils.split(bitmap, 3, 3);
+            pieces = BitmapUtils.split(bitmap, 3, 3);
             for (int i = 1; i < 9; i++) {
 
-                ImageView[] imageViews={game1,game2,game3,game4,game5,game6,
+                ImageView[] tempImages={game1,game2,game3,game4,game5,game6,
                         game7,game8,game9};
-
+                imageViews=tempImages;
                 if(imageViews[i]!=null )
                 {
                     imageViews[i].setImageBitmap(pieces.get(randomList[i]).bitmap);
@@ -151,10 +163,124 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
 
+            //创建手势监听器
+
         }
 
         super.onActivityResult(requestCode, resultCode, data);
     }
 
+
+    class MyGestureListener implements GestureDetector.OnGestureListener {
+
+        private Context context;
+        private Bitmap tempBitmap;
+
+        public MyGestureListener(Context context) {
+            this.context=context;
+        }
+
+        @Override
+        public boolean onDown(MotionEvent e) {
+            return false;
+        }
+
+        @Override
+        public void onShowPress(MotionEvent e) {
+
+        }
+
+        @Override
+        public boolean onSingleTapUp(MotionEvent e) {
+            return false;
+        }
+
+        @Override
+        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+            return false;
+        }
+
+        @Override
+        public void onLongPress(MotionEvent e) {
+
+        }
+
+        @Override
+        public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+
+            float minMove = 120;         //最小滑动距离
+            float minVelocity = 0;      //最小滑动速度
+            float beginX = e1.getX();
+            float endX = e2.getX();
+            float beginY = e1.getY();
+            float endY = e2.getY();
+
+
+            if(beginX-endX>minMove&&Math.abs(velocityX)>minVelocity){   //左滑
+                if(flag%3!=2)
+                {
+                    movePicture(flag,flag+1);
+                    Toast.makeText(context, "左滑", Toast.LENGTH_SHORT);
+                    //交换flag与flag+1指向的内容
+                }
+
+
+            }else if(endX-beginX>minMove&&Math.abs(velocityX)>minVelocity){   //右滑
+                if(flag%3!=0)
+                {
+                    movePicture(flag,flag-1);
+                    //交换flag与flag-1所指向的内容
+                    Toast.makeText(context,"右滑",Toast.LENGTH_SHORT);
+                }
+            }else if(beginY-endY>minMove&&Math.abs(velocityY)>minVelocity){   //上滑
+                if(flag-6<0)
+                {
+                    movePicture(flag,flag+3);
+                    //交换flag与flag+3所指向的内容
+                    Toast.makeText(context,"上滑",Toast.LENGTH_SHORT);
+                }
+            }else if(endY-beginY>minMove&&Math.abs(velocityY)>minVelocity){   //下滑
+                if(flag>2)
+                {
+                    movePicture(flag,flag-3);
+                    //交换flag与flag-3所指向的内容
+                    Toast.makeText(context,"下滑",Toast.LENGTH_SHORT);
+                }
+            }
+
+
+
+            return false;
+        }
+
+        private void movePicture(int source,int des){
+           // imageViews[des].setDrawingCacheEnabled(true);
+           // tempBitmap=imageViews[source].getDrawingCache();
+            imageViews[source].setImageBitmap(pieces.get(randomList[des]).bitmap);
+            imageViews[des].setImageBitmap(null);
+            pieces.get(randomList[source]).bitmap=pieces.get(randomList[des]).bitmap;
+            pieces.get(randomList[des]).bitmap=null;
+//            int temp = randomList[source];
+//            randomList[source]=randomList[des];
+//            randomList[des]=temp;
+            flag=des;
+            //imageViews[des].setDrawingCacheEnabled(false);
+
+
+//            int []sourceLocation = new int[2];
+//            int []desLocation = new int[2];
+//            imageViews[source].getLocationOnScreen(sourceLocation);
+//            imageViews[des].getLocationOnScreen(desLocation);
+//            translateAnimation1 = new TranslateAnimation(sourceLocation[0], desLocation[0],
+//                    sourceLocation[1],desLocation[1]);
+//            translateAnimation1.setDuration(2000);
+//            translateAnimation2 = new TranslateAnimation(desLocation[0], sourceLocation[0],
+//                    desLocation[1],sourceLocation[1]);
+//            translateAnimation2.setDuration(2000);
+//            imageViews[source].startAnimation(translateAnimation1);
+//            imageViews[des].startAnimation(translateAnimation2);
+//            flag=des;
+        }
+    }
 
 }
